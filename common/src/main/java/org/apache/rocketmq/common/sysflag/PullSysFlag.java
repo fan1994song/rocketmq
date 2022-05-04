@@ -27,18 +27,22 @@ public class PullSysFlag {
         final boolean subscription, final boolean classFilter) {
         int flag = 0;
 
+        // 表示从内存中读取的消费进度大于0， 则设置该标记位。
         if (commitOffset) {
             flag |= FLAG_COMMIT_OFFSET;
         }
 
+        // 表示消息拉取时支持挂起。
         if (suspend) {
             flag |= FLAG_SUSPEND;
         }
 
+        // 消息过滤机制为表达式，则设置该标记位。
         if (subscription) {
             flag |= FLAG_SUBSCRIPTION;
         }
 
+        // 消息过滤机制为类过滤模式
         if (classFilter) {
             flag |= FLAG_CLASS_FILTER;
         }

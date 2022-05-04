@@ -478,6 +478,7 @@ public class DefaultMQAdminExt extends ClientConfig implements MQAdminExt {
     public BrokerStatsData viewBrokerStatsData(String brokerAddr, String statsName,
         String statsKey) throws RemotingConnectException,
         RemotingSendRequestException, RemotingTimeoutException, MQClientException, InterruptedException {
+        // 向broker发送查询监控数据
         return this.defaultMQAdminExtImpl.viewBrokerStatsData(brokerAddr, statsName, statsKey);
     }
 

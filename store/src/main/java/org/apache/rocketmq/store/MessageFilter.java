@@ -21,6 +21,7 @@ import java.util.Map;
 
 public interface MessageFilter {
     /**
+     * 通过标签代码或过滤器位图匹配，当消息接收并存储在消费队列扩展中时计算
      * match by tags code or filter bit map which is calculated when message received
      * and stored in consume queue ext.
      *

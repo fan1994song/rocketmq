@@ -232,6 +232,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     /**
      * Constructor specifying namespace, producer group, RPC hook, enabled msgTrace flag and customized trace topic
      * name.
+     * 构造函数指定命名空间、生产者组、RPC 挂钩、启用的 msgTrace 标志和自定义的跟踪主题名称
      *
      * @param namespace Namespace for this MQ Producer instance.
      * @param producerGroup Producer group, see the name-sake field.
@@ -246,10 +247,13 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         this.producerGroup = producerGroup;
         defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
         //if client open the message trace feature
+        // 若发送者开启消息轨迹
         if (enableMsgTrace) {
             try {
+                // 消息轨迹异步转发器
                 AsyncTraceDispatcher dispatcher = new AsyncTraceDispatcher(producerGroup, TraceDispatcher.Type.PRODUCE, customizedTraceTopic, rpcHook);
                 dispatcher.setHostProducer(this.defaultMQProducerImpl);
+                // 消息发送用于跟踪消息轨迹的钩子函数
                 traceDispatcher = dispatcher;
                 this.defaultMQProducerImpl.registerSendMessageHook(
                     new SendMessageTraceHookImpl(traceDispatcher));
@@ -903,6 +907,9 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         return this.defaultMQProducerImpl.queryMessageByUniqKey(withNamespace(topic), msgId);
     }
 
+    /**
+     * 批量发送消息
+     */
     @Override
     public SendResult send(
         Collection<Message> msgs) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
@@ -982,9 +989,12 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private MessageBatch batch(Collection<Message> msgs) throws MQClientException {
         MessageBatch msgBatch;
         try {
+            // 数据构建、基础校验
             msgBatch = MessageBatch.generateFromList(msgs);
             for (Message message : msgBatch) {
+                // 单个消息进行topic、message的消息体大小 校验
                 Validators.checkMessage(message, this);
+                // 设置msg唯一ID
                 MessageClientIDSetter.setUniqID(message);
                 message.setTopic(withNamespace(message.getTopic()));
             }

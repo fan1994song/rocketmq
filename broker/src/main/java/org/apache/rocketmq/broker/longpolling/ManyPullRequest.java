@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ManyPullRequest {
+    // 该数据结构存在并发访问
     private final ArrayList<PullRequest> pullRequestList = new ArrayList<>();
 
     public synchronized void addPullRequest(final PullRequest pullRequest) {

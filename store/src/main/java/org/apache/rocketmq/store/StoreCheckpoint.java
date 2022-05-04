@@ -32,8 +32,11 @@ public class StoreCheckpoint {
     private final RandomAccessFile randomAccessFile;
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
+    // commit写入时间戳
     private volatile long physicMsgTimestamp = 0;
+    // consume写入时间戳
     private volatile long logicsMsgTimestamp = 0;
+    // index写入时间戳
     private volatile long indexMsgTimestamp = 0;
 
     public StoreCheckpoint(final String scpPath) throws IOException {
@@ -102,6 +105,10 @@ public class StoreCheckpoint {
         return Math.min(this.getMinTimestamp(), this.indexMsgTimestamp);
     }
 
+    /**
+     * 获取
+     * @return
+     */
     public long getMinTimestamp() {
         long min = Math.min(this.physicMsgTimestamp, this.logicsMsgTimestamp);
 

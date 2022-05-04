@@ -36,6 +36,7 @@ public class FlushDiskWatcher extends ServiceThread {
 
     @Override
     public void run() {
+        // 刷盘监听线程
         while (!isStopped()) {
             GroupCommitRequest request = null;
             try {
@@ -46,10 +47,12 @@ public class FlushDiskWatcher extends ServiceThread {
             }
             while (!request.future().isDone()) {
                 long now = System.nanoTime();
+                // 若超过刷盘时间，设置刷盘结果为刷盘超时
                 if (now - request.getDeadLine() >= 0) {
                     request.wakeupCustomer(PutMessageStatus.FLUSH_DISK_TIMEOUT);
                     break;
                 }
+                // 若死亡时间不到一秒钟，返回刷盘超时
                 // To avoid frequent thread switching, replace future.get with sleep here,
                 long sleepTime = (request.getDeadLine() - now) / 1_000_000;
                 sleepTime = Math.min(10, sleepTime);

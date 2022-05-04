@@ -79,10 +79,14 @@ public class NamesrvStartup {
             return null;
         }
 
+        /**
+         * 构建nameserver、nettyserver 的配置属性
+         */
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
         nettyServerConfig.setListenPort(9876);
         if (commandLine.hasOption('c')) {
+            // 在解析启动 时把指定的配置文件或启动命令中的选项值填充到NamesrvConfig、 NettyServerConfig对象中（命令行 -c configFile指定配置文件）
             String file = commandLine.getOptionValue('c');
             if (file != null) {
                 InputStream in = new BufferedInputStream(new FileInputStream(file));
@@ -143,6 +147,9 @@ public class NamesrvStartup {
             System.exit(-3);
         }
 
+        /**
+         * 注册JVM钩子函数，当服务关闭时。通过钩子函数关闭相关资源
+         */
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, (Callable<Void>) () -> {
             controller.shutdown();
             return null;

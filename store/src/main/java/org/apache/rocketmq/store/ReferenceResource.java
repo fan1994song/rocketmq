@@ -42,6 +42,7 @@ public abstract class ReferenceResource {
 
     public void shutdown(final long intervalForcibly) {
         if (this.available) {
+            // 可用状态改为false、首次关闭时间戳，尝试释放资源
             this.available = false;
             this.firstShutdownTimestamp = System.currentTimeMillis();
             this.release();
@@ -53,6 +54,9 @@ public abstract class ReferenceResource {
         }
     }
 
+    /**
+     * 尝试释放资源：引用次数减一，value小于1才会释放资源
+     */
     public void release() {
         long value = this.refCount.decrementAndGet();
         if (value > 0)

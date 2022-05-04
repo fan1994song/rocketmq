@@ -57,17 +57,26 @@ public class ExpressionMessageFilter implements MessageFilter {
         }
     }
 
+    /**
+     * 消息过滤
+     * @param tagsCode tagsCode
+     * @param cqExtUnit extend unit of consume queue
+     * @return
+     */
     @Override
     public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+        // 订阅消息为空，则返回true，不过滤消息。
         if (null == subscriptionData) {
             return true;
         }
 
+        // 如果是类过滤模 式，则返回true
         if (subscriptionData.isClassFilterMode()) {
             return true;
         }
 
         // by tags code.
+        // 如果是TAG模式，并且消息的tagsCode参数为空或小 于0，则返回true
         if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
 
             if (tagsCode == null) {
@@ -78,6 +87,7 @@ public class ExpressionMessageFilter implements MessageFilter {
                 return true;
             }
 
+            // 消息的tag哈希码校验（需要在消息消费端对消息标志进行精确匹配）
             return subscriptionData.getCodeSet().contains(tagsCode.intValue());
         } else {
             // no expression or no bloom
@@ -114,16 +124,25 @@ public class ExpressionMessageFilter implements MessageFilter {
         return true;
     }
 
+    /**
+     * 表达式过滤
+     * @param msgBuffer message buffer in commit log, may be null if not invoked in store.
+     * @param properties message properties, should decode from buffer if null by yourself.
+     * @return
+     */
     @Override
     public boolean isMatchedByCommitLog(ByteBuffer msgBuffer, Map<String, String> properties) {
+        // 如果订阅消息为空，返回true
         if (subscriptionData == null) {
             return true;
         }
 
+        // 类过滤模式，返回true
         if (subscriptionData.isClassFilterMode()) {
             return true;
         }
 
+        // tag模式，返回rue
         if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
             return true;
         }
@@ -131,7 +150,7 @@ public class ExpressionMessageFilter implements MessageFilter {
         ConsumerFilterData realFilterData = this.consumerFilterData;
         Map<String, String> tempProperties = properties;
 
-        // no expression
+        // no expression 无表达式，返回true
         if (realFilterData == null || realFilterData.getExpression() == null
             || realFilterData.getCompiledExpression() == null) {
             return true;
@@ -143,6 +162,7 @@ public class ExpressionMessageFilter implements MessageFilter {
 
         Object ret = null;
         try {
+            // 根据消息属性实现类似于数据库SQL where条件的过滤方式
             MessageEvaluationContext context = new MessageEvaluationContext(tempProperties);
 
             ret = realFilterData.getCompiledExpression().evaluate(context);

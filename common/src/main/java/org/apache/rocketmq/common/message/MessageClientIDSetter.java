@@ -42,6 +42,7 @@ public class MessageClientIDSetter {
         tempBuffer.put(ip);
         tempBuffer.putShort((short) UtilAll.getPid());
         tempBuffer.putInt(MessageClientIDSetter.class.getClassLoader().hashCode());
+        // ip+进程ID+类加载器的hashCode，通过函数构成字符串
         FIX_STRING = UtilAll.bytes2string(tempBuffer.array()).toCharArray();
         setStartTime(System.currentTimeMillis());
         COUNTER = new AtomicInteger(0);
@@ -111,11 +112,17 @@ public class MessageClientIDSetter {
         return value & 0x0000FFFF;
     }
 
+    /**
+     * 创建msg的ID标识（即便重启后，进程ID不一样，所以不会msgId重复）
+     * @return
+     */
     public static String createUniqID() {
         char[] sb = new char[LEN * 2];
+        // 此处通用字符串，单个机器单个客户端相同
         System.arraycopy(FIX_STRING, 0, sb, 0, FIX_STRING.length);
         long current = System.currentTimeMillis();
         if (current >= nextStartTime) {
+            //月初时间与当前时间差值
             setStartTime(current);
         }
         int diff = (int)(current - startTime);
@@ -124,8 +131,10 @@ public class MessageClientIDSetter {
             diff = 0;
         }
         int pos = FIX_STRING.length;
+        // 根据差值，再次处理后，加入到ID中，此时若间隔时间相同，应该还是无法保证唯一
         UtilAll.writeInt(sb, pos, diff);
         pos += 8;
+        // 自增AtomicInteger保证此处必定唯一(到达极端值，会为负数，仍执行递增操作，不会异常)
         UtilAll.writeShort(sb, pos, COUNTER.getAndIncrement());
         return new String(sb);
     }

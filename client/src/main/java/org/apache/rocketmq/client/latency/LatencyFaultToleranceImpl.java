@@ -24,11 +24,20 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.client.common.ThreadLocalIndex;
 
+/**
+ * 延迟机制接口规范实现（broker不可用后，后续发送消息，规避异常broker的作用）
+ */
 public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> {
     private final ConcurrentHashMap<String, FaultItem> faultItemTable = new ConcurrentHashMap<String, FaultItem>(16);
 
     private final ThreadLocalIndex whichItemWorst = new ThreadLocalIndex();
 
+    /**
+     * 更新不可用的broker数据，通过ConcurrentHashMap的putIfAbsent来解决并发问题
+     * @param name
+     * @param currentLatency
+     * @param notAvailableDuration
+     */
     @Override
     public void updateFaultItem(final String name, final long currentLatency, final long notAvailableDuration) {
         FaultItem old = this.faultItemTable.get(name);

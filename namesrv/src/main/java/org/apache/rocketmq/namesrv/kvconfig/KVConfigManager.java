@@ -169,6 +169,9 @@ public class KVConfigManager {
         return null;
     }
 
+    /**
+     * 输出 configTable 信息（KV）
+     */
     public void printAllPeriodically() {
         try {
             this.lock.readLock().lockInterruptibly();

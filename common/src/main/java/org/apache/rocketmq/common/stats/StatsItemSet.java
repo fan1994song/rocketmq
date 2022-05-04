@@ -26,7 +26,11 @@ import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.logging.InternalLogger;
 
+/**
+ * 一类统计指标集合
+ */
 public class StatsItemSet {
+    // TOPIC_PUT_NUMS对应的StatsItemSet为例，StatsItemSet存储 的是主题写入数量(消息发送数量)
     private final ConcurrentMap<String/* key */, StatsItem> statsItemTable =
         new ConcurrentHashMap<String, StatsItem>(128);
 
@@ -47,6 +51,7 @@ public class StatsItemSet {
             @Override
             public void run() {
                 try {
+                    // 每隔1os执行一次，大小为6，所以近一分钟的数据都在其中
                     samplingInSeconds();
                 } catch (Throwable ignored) {
                 }

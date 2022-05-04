@@ -76,6 +76,7 @@ public abstract class ServiceThread implements Runnable {
 
             long beginTime = System.currentTimeMillis();
             if (!this.thread.isDaemon()) {
+                // 最多等待 JOIN_TIME 毫秒以使该线程终止。 JOIN_TIME 的超时意味着永远等待
                 this.thread.join(this.getJointime());
             }
             long elapsedTime = System.currentTimeMillis() - beginTime;

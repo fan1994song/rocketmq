@@ -75,22 +75,37 @@ public class NamesrvController {
 
     public boolean initialize() {
 
+        /**
+         * 加载KV配置，创建nettyServer(网络处理对象)
+         */
         this.kvConfigManager.load();
 
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
 
+        /**
+         * 启动默认8个线程的线程池
+         */
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
 
         this.registerProcessor();
 
+        /**
+         * 检查broker状态的单线程（每间隔10秒检测一次）
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.routeInfoManager::scanNotActiveBroker, 5, 10, TimeUnit.SECONDS);
 
+        /**
+         * 打印配置信息的单线程：十分钟一次
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically, 1, 10, TimeUnit.MINUTES);
 
         if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
             // Register a listener to reload SslContext
             try {
+                /**
+                 * 文件监听，针对ssl配置修改，进行监听重载数据
+                 */
                 fileWatchService = new FileWatchService(
                     new String[] {
                         TlsSystemConfig.tlsServerCertPath,

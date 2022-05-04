@@ -27,17 +27,24 @@ import org.apache.rocketmq.logging.InternalLogger;
 
 public class StatsItem {
 
+    // 当前统计的数量值
     private final LongAdder value = new LongAdder();
 
+    // 当前value值变化的次数
     private final LongAdder times = new LongAdder();
 
+    // 近1min内的调用快照 信息，每10s采集一次，并且超过6个则淘汰最早入队的原生快照 信息，故其长度不会超过6
     private final LinkedList<CallSnapshot> csListMinute = new LinkedList<CallSnapshot>();
 
+    // 近1h内的调用快照信 息，每10min采集一次，同样不会超过6个元素
     private final LinkedList<CallSnapshot> csListHour = new LinkedList<CallSnapshot>();
 
+    // 近一天的调用快照信息，每1h采集一次，该队列长度不会超过24，超过则会丢弃最早入队的。
     private final LinkedList<CallSnapshot> csListDay = new LinkedList<CallSnapshot>();
 
+    // 统计项的名称
     private final String statsName;
+    // 统计项Key，如果statsName统计各topic的写 入数量，则statsKey为每一个具体的topic名称
     private final String statsKey;
     private final ScheduledExecutorService scheduledExecutorService;
     private final InternalLogger log;

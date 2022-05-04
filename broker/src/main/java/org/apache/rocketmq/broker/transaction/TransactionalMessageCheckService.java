@@ -22,6 +22,10 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 
+/**
+ * 事务回查定时任务
+ * 删除消息就是往op队列中写入消息，若半消息对应op消息存在，说明该消息已经rollback删除状态
+ */
 public class TransactionalMessageCheckService extends ServiceThread {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
@@ -38,9 +42,11 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
     @Override
     public void run() {
+        // 启动事务检查服务线程
         log.info("Start transaction check service thread!");
         long checkInterval = brokerController.getBrokerConfig().getTransactionCheckInterval();
         while (!this.isStopped()) {
+            // 事务消息检查 时间间隔默认60毫秒
             this.waitForRunning(checkInterval);
         }
         log.info("End transaction check service thread!");
@@ -48,7 +54,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
     @Override
     protected void onWaitEnd() {
+        // 事务超时时间
         long timeout = brokerController.getBrokerConfig().getTransactionTimeOut();
+        // 消息被检查的最大次数，如果超过这个值，这条消息将被丢弃
         int checkMax = brokerController.getBrokerConfig().getTransactionCheckMax();
         long begin = System.currentTimeMillis();
         log.info("Begin to check prepare message, begin time:{}", begin);

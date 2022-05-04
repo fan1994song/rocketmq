@@ -200,7 +200,13 @@ public class TransactionalMessageBridge {
         return store.asyncPutMessage(parseHalfMessageInner(messageInner));
     }
 
+    /**
+     * 事务消息：半消息转换
+     * @param msgInner
+     * @return
+     */
     private MessageExtBrokerInner parseHalfMessageInner(MessageExtBrokerInner msgInner) {
+        // 记录之前的topic、queueId信息，消息转发给topic：RMQ_SYS_TRANS_HALF_TOPIC，默认队列去处理
         MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_REAL_TOPIC, msgInner.getTopic());
         MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_REAL_QUEUE_ID,
             String.valueOf(msgInner.getQueueId()));
@@ -302,7 +308,7 @@ public class TransactionalMessageBridge {
     /**
      * Use this function while transaction msg is committed or rollback write a flag 'd' to operation queue for the
      * msg's offset
-     *
+     * 删除消息就是写入相关的op消息
      * @param prepareMessage Half message
      * @param messageQueue Half message queue
      * @return This method will always return true.

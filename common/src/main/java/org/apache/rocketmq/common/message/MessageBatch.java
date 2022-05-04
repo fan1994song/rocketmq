@@ -45,12 +45,20 @@ public class MessageBatch extends Message implements Iterable<Message> {
         List<Message> messageList = new ArrayList<Message>(messages.size());
         Message first = null;
         for (Message message : messages) {
+            /**
+             * 延迟消息不支持批量发送
+             */
             if (message.getDelayTimeLevel() > 0) {
                 throw new UnsupportedOperationException("TimeDelayLevel is not supported for batching");
             }
+            /**
+             * 重试消息不支持批量
+             */
             if (message.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                 throw new UnsupportedOperationException("Retry Group is not supported for batching");
             }
+
+            // 批量发送topic相关信息必需一致
             if (first == null) {
                 first = message;
             } else {

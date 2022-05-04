@@ -61,20 +61,29 @@ import org.apache.rocketmq.store.schedule.ScheduleMessageService;
  * Store all metadata downtime for recovery, data protection reliability
  */
 public class DLedgerCommitLog extends CommitLog {
+    // 于Raft协议实现的集群内 的一个节点
     private final DLedgerServer dLedgerServer;
+    // DLedger的配置信息
     private final DLedgerConfig dLedgerConfig;
+    // DLedger基于文件映射的存储实现
     private final DLedgerMmapFileStore dLedgerFileStore;
+    // DLedger管理的存储文件集合，对标RocketMQ中的MappedFileQueue
     private final MmapFileList dLedgerFileList;
 
     //The id identifies the broker role, 0 means master, others means slave
+    // 节点ID
     private final int id;
 
+    // 消息序列器
     private final MessageSerializer messageSerializer;
+    // 用于记录消息追加的耗时
     private volatile long beginTimeInDledgerLock = 0;
 
     //This offset separate the old commitlog from dledger commitlog
+    // 记录旧的CommitLog文 件中的最大偏移量，如果访问的偏移量大于它，则访问Dledger管理的文件
     private long dividedCommitlogOffset = -1;
 
+    // 是否正在恢复旧的CommitLog文件
     private boolean isInrecoveringOldCommitlog = false;
 
     private final StringBuilder msgIdBuilder = new StringBuilder();
@@ -95,8 +104,13 @@ public class DLedgerCommitLog extends CommitLog {
         dLedgerConfig.setEnableBatchPush(defaultMessageStore.getMessageStoreConfig().isEnableBatchPush());
 
         id = Integer.parseInt(dLedgerConfig.getSelfId().substring(1)) + 1;
+        // 每一个Broker节点为Raft集群中的一个节点，同一个复制组会使用Raft协议进行日志复制
         dLedgerServer = new DLedgerServer(dLedgerConfig);
         dLedgerFileStore = (DLedgerMmapFileStore) dLedgerServer.getdLedgerStore();
+        /**
+         * 添加消息Append事件的处理钩子，主要是完成CommitLog 文件的物理偏移量在启用主从切换后与未开启主从切换的语义保持一致性
+         * 如果启用了主从切换机制，消息追加时返回的物理偏移量并 不是DLedger日志条目的起始位置，而是其body字段的开始位置
+         */
         DLedgerMmapFileStore.AppendHook appendHook = (entry, buffer, bodyOffset) -> {
             assert bodyOffset == DLedgerEntry.BODY_OFFSET;
             buffer.position(buffer.position() + bodyOffset + MessageDecoder.PHY_POS_POSITION);

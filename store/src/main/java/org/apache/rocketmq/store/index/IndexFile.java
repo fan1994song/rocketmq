@@ -91,8 +91,10 @@ public class IndexFile {
 
     public boolean putKey(final String key, final long phyOffset, final long storeTimestamp) {
         if (this.indexHeader.getIndexCount() < this.indexNum) {
+            // hashcode
             int keyHash = indexKeyHashMethod(key);
             int slotPos = keyHash % this.hashSlotNum;
+            // 所属偏移量
             int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize;
 
             FileLock fileLock = null;
@@ -101,11 +103,13 @@ public class IndexFile {
 
                 // fileLock = this.fileChannel.lock(absSlotPos, hashSlotSize,
                 // false);
+                // 哈希槽存储的数据小于等于0 或大于当前Index文件中的索引条目，则将slotValue设置为0
                 int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
                 if (slotValue <= invalidIndex || slotValue > this.indexHeader.getIndexCount()) {
                     slotValue = invalidIndex;
                 }
 
+                // 计算待存储消息的时间戳与第一条消息时间戳的差值， 并转换成秒
                 long timeDiff = storeTimestamp - this.indexHeader.getBeginTimestamp();
 
                 timeDiff = timeDiff / 1000;
@@ -118,17 +122,21 @@ public class IndexFile {
                     timeDiff = 0;
                 }
 
+                // 计算新添加条目的起始物理偏移量
                 int absIndexPos =
                     IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * hashSlotSize
                         + this.indexHeader.getIndexCount() * indexSize;
 
+                // 存储index条目（哈希槽中存储的是该 哈希码对应的最新Index条目的下标，新的Index条目最后4个字节存储 该哈希码上一个条目的Index下标）
                 this.mappedByteBuffer.putInt(absIndexPos, keyHash);
                 this.mappedByteBuffer.putLong(absIndexPos + 4, phyOffset);
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8, (int) timeDiff);
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8 + 4, slotValue);
 
+                // 将当前Index文件中包含的条目数量存入哈希槽中，覆盖原先 哈希槽的值（存储哈希槽）
                 this.mappedByteBuffer.putInt(absSlotPos, this.indexHeader.getIndexCount());
 
+                // 第一个数据设置起始偏移量、时间戳
                 if (this.indexHeader.getIndexCount() <= 1) {
                     this.indexHeader.setBeginPhyOffset(phyOffset);
                     this.indexHeader.setBeginTimestamp(storeTimestamp);
@@ -137,6 +145,7 @@ public class IndexFile {
                 if (invalidIndex == slotValue) {
                     this.indexHeader.incHashSlotCount();
                 }
+                // 设置最大偏移量、结束时间戳
                 this.indexHeader.incIndexCount();
                 this.indexHeader.setEndPhyOffset(phyOffset);
                 this.indexHeader.setEndTimestamp(storeTimestamp);
@@ -157,7 +166,7 @@ public class IndexFile {
             log.warn("Over index file capacity: index count = " + this.indexHeader.getIndexCount()
                 + "; index max num = " + this.indexNum);
         }
-
+        // 当前已使用条目大于、等于允许最大条目数时，返回 fasle，表示当前Index文件已写满
         return false;
     }
 
@@ -202,6 +211,7 @@ public class IndexFile {
                     // hashSlotSize, true);
                 }
 
+                // 得到put时的indexCount，然后回推消息偏移量，消息中后四位代表链表上一个节点，进行遍历连表
                 int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
                 // if (fileLock != null) {
                 // fileLock.release();

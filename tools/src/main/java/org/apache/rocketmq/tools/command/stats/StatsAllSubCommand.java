@@ -167,8 +167,10 @@ public class StatsAllSubCommand implements SubCommand {
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
 
         try {
+            // 构建DefaultMQAdminExt对象，并设置实例名称为当前时 间戳，调用start()方法启动
             defaultMQAdminExt.start();
 
+            // 获取所有topic
             TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
 
             System.out.printf("%-64s  %-64s %12s %11s %11s %14s %14s%n",
@@ -184,6 +186,7 @@ public class StatsAllSubCommand implements SubCommand {
             boolean activeTopic = commandLine.hasOption('a');
             String selectTopic = commandLine.getOptionValue('t');
 
+            // 遍历主题列表，从服务器获取相关监控数据
             for (String topic : topicList.getTopicList()) {
                 if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
                     continue;

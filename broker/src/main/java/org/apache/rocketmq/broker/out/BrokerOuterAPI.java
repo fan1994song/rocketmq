@@ -257,6 +257,9 @@ public class BrokerOuterAPI {
         throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
+    /**
+     * 遍历向所有nameserver发起心跳请求，通过 countDownLatch 来保证全部请求执行完，再退出方法
+     */
     public List<Boolean> needRegister(
         final String clusterName,
         final String brokerAddr,

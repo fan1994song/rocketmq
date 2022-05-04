@@ -882,6 +882,7 @@ public class BrokerController {
             this.registerBrokerAll(true, false, true);
         }
 
+        // 默认30秒钟向都有nameserver注册自身，即便配置范围也只能是10～60秒之间
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -1126,12 +1127,17 @@ public class BrokerController {
         return accessValidatorMap;
     }
 
+    /**
+     * 从节点同步消息数据
+     */
     private void handleSlaveSynchronize(BrokerRole role) {
+        // 从服务器
         if (role == BrokerRole.SLAVE) {
             if (null != slaveSyncFuture) {
                 slaveSyncFuture.cancel(false);
             }
             this.slaveSynchronize.setMasterAddr(null);
+            // 定时任务，十秒发起同步消费偏移量的请求
             slaveSyncFuture = this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
@@ -1224,6 +1230,7 @@ public class BrokerController {
     private void startProcessorByHa(BrokerRole role) {
         if (BrokerRole.SLAVE != role) {
             if (this.transactionalMessageCheckService != null) {
+                // 开始事务定时任务线程
                 this.transactionalMessageCheckService.start();
             }
         }

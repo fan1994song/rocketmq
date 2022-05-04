@@ -22,6 +22,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 消息体
+ */
 public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
 
@@ -134,6 +137,10 @@ public class Message implements Serializable {
         this.setKeys(keys);
     }
 
+    /**
+     * delay等级，其实就是在消息上设置property属性作为标识
+     * @return
+     */
     public int getDelayTimeLevel() {
         String t = this.getProperty(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
         if (t != null) {

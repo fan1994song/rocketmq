@@ -28,11 +28,17 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.util.LibC;
 import sun.nio.ch.DirectBuffer;
 
+/**
+ * RokcetMQ引入该机制是为了提供一种内存锁 定，将当前堆外内存一直锁定在内存中，避免被进程将内存交换到磁盘中。
+ */
 public class TransientStorePool {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    // 默认为5
     private final int poolSize;
+    // 每个ByteBuffer的大小，默认为 mapedFileSizeCommitLog
     private final int fileSize;
+    // ByteBuffer容器，双端队列
     private final Deque<ByteBuffer> availableBuffers;
     private final MessageStoreConfig storeConfig;
 
@@ -44,6 +50,7 @@ public class TransientStorePool {
     }
 
     /**
+     * 创建数量为poolSize的堆外内存，利用com.sun.jna.Library类库 锁定该批内存，避免被置换到交换区，以便提高存储性能
      * It's a heavy init method.
      */
     public void init() {

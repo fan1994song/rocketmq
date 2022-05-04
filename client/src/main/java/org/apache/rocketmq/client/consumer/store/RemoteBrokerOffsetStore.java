@@ -43,6 +43,9 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     private final static InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String groupName;
+    /**
+     * 本地缓存消费进度
+     */
     private ConcurrentMap<MessageQueue, AtomicLong> offsetTable =
         new ConcurrentHashMap<MessageQueue, AtomicLong>();
 
@@ -187,6 +190,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
 
     /**
      * Update the Consumer Offset in one way, once the Master is off, updated to Slave, here need to be optimized.
+     * 更新Consumer Offset
      */
     private void updateConsumeOffsetToBroker(MessageQueue mq, long offset) throws RemotingException,
         MQBrokerException, InterruptedException, MQClientException {

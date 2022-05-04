@@ -46,9 +46,13 @@ public class SlaveSynchronize {
     }
 
     public void syncAll() {
+        // 同步topic信息
         this.syncTopicConfig();
+        // 同步消费偏移量
         this.syncConsumerOffset();
+        // 同步延迟偏移量
         this.syncDelayOffset();
+        // 同步消费组信息
         this.syncSubscriptionGroupConfig();
     }
 
@@ -80,8 +84,10 @@ public class SlaveSynchronize {
         String masterAddrBak = this.masterAddr;
         if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
             try {
+                // 查询主节点的所有消费偏移量信息
                 ConsumerOffsetSerializeWrapper offsetWrapper =
                     this.brokerController.getBrokerOuterAPI().getAllConsumerOffset(masterAddrBak);
+                // 覆盖从服务器的消费进度
                 this.brokerController.getConsumerOffsetManager().getOffsetTable()
                     .putAll(offsetWrapper.getOffsetTable());
                 this.brokerController.getConsumerOffsetManager().persist();

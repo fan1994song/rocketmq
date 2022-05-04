@@ -31,6 +31,7 @@ public class ThreadLocalIndex {
         }
 
         this.threadLocalIndex.set(++index);
+        System.err.println(index);
         return Math.abs(index);
     }
 

@@ -40,6 +40,9 @@ public class SendMessageTraceHookImpl implements SendMessageHook {
         return "SendMessageTraceHook";
     }
 
+    /**
+     * 发送消息前的钩子实现
+     */
     @Override
     public void sendMessageBefore(SendMessageContext context) {
         //if it is message trace data,then it doesn't recorded
@@ -63,6 +66,10 @@ public class SendMessageTraceHookImpl implements SendMessageHook {
         tuxeContext.getTraceBeans().add(traceBean);
     }
 
+    /**
+     * 发送消息后，钩子实现
+     * @param context
+     */
     @Override
     public void sendMessageAfter(SendMessageContext context) {
         //if it is message trace data,then it doesn't recorded
@@ -84,6 +91,7 @@ public class SendMessageTraceHookImpl implements SendMessageHook {
         TraceBean traceBean = tuxeContext.getTraceBeans().get(0);
         int costTime = (int) ((System.currentTimeMillis() - tuxeContext.getTimeStamp()) / tuxeContext.getTraceBeans().size());
         tuxeContext.setCostTime(costTime);
+        // 返回send_ok才为成功
         if (context.getSendResult().getSendStatus().equals(SendStatus.SEND_OK)) {
             tuxeContext.setSuccess(true);
         } else {

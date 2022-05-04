@@ -16,6 +16,8 @@
  */
 package org.apache.rocketmq.example.quickstart;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.List;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -24,6 +26,7 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.remoting.common.RemotingHelper;
 
 /**
  * This example shows how to subscribe and consume messages using providing {@link DefaultMQPushConsumer}.
@@ -48,7 +51,7 @@ public class Consumer {
          * }
          * </pre>
          */
-
+        consumer.setNamesrvAddr("127.0.0.1:9876");
         /*
          * Specify where to start in case the specific consumer group is a brand-new one.
          */
@@ -67,7 +70,18 @@ public class Consumer {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                 ConsumeConcurrentlyContext context) {
+                msgs.forEach(messageExt -> {
+                    try {
+                        String message = new String(messageExt.getBody(), RemotingHelper.DEFAULT_CHARSET);
+                        System.out.printf("topic:" + messageExt.getTopic() + ",tag:{" + messageExt.getTags() + "},message:{" + message +
+                                "}");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                });
                 System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+//                int i= 1/0;
+                System.out.println("休眠结束");
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });

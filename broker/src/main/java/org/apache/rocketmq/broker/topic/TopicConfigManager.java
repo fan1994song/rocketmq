@@ -230,6 +230,7 @@ public class TopicConfigManager extends ConfigManager {
         final int clientDefaultTopicQueueNums,
         final int perm,
         final int topicSysFlag) {
+        // 存在，得到，返回
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
         if (topicConfig != null)
             return topicConfig;
@@ -237,12 +238,15 @@ public class TopicConfigManager extends ConfigManager {
         boolean createNew = false;
 
         try {
+            // 获取锁，超时时间30秒
             if (this.topicConfigTableLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
+                    // 懒加载，双重check
                     topicConfig = this.topicConfigTable.get(topic);
                     if (topicConfig != null)
                         return topicConfig;
 
+                    // 一个读写队列
                     topicConfig = new TopicConfig(topic);
                     topicConfig.setReadQueueNums(clientDefaultTopicQueueNums);
                     topicConfig.setWriteQueueNums(clientDefaultTopicQueueNums);
@@ -262,6 +266,7 @@ public class TopicConfigManager extends ConfigManager {
             log.error("createTopicInSendMessageBackMethod exception", e);
         }
 
+        // 若创建，注册所有broker
         if (createNew) {
             this.brokerController.registerBrokerAll(false, true, true);
         }

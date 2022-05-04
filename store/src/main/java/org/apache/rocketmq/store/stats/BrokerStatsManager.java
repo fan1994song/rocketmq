@@ -27,6 +27,9 @@ import org.apache.rocketmq.common.stats.MomentStatsItemSet;
 import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsItemSet;
 
+/**
+ * RocketMQ Broker端的监控数据采集实现类
+ */
 public class BrokerStatsManager {
 
     public static final String QUEUE_PUT_NUMS = "QUEUE_PUT_NUMS";
@@ -63,6 +66,7 @@ public class BrokerStatsManager {
 
     /**
      * read disk follow stats
+     * RocketMQ服务端数据监控统计相关的日志文件为stats.log
      */
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.ROCKETMQ_STATS_LOGGER_NAME);
     private static final InternalLogger COMMERCIAL_LOG = InternalLoggerFactory.getLogger(LoggerName.COMMERCIAL_LOGGER_NAME);
@@ -70,7 +74,10 @@ public class BrokerStatsManager {
         "BrokerStatsThread"));
     private final ScheduledExecutorService commercialExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "CommercialStatsThread"));
+
+    // 服务端监控数据采集核心数据结构，用来存储Broker端的统计数据
     private final HashMap<String, StatsItemSet> statsTable = new HashMap<String, StatsItemSet>();
+    // 集群名称
     private final String clusterName;
     private final boolean enableQueueStat;
     private final MomentStatsItemSet momentStatsItemSetFallSize = new MomentStatsItemSet(GROUP_GET_FALL_SIZE, scheduledExecutorService, log);
@@ -301,6 +308,7 @@ public class BrokerStatsManager {
 
     public void recordDiskFallBehindSize(final String group, final String topic, final int queueId,
         final long fallBehind) {
+        // 组成group-topic-queueId的key
         final String statsKey = buildStatsKey(queueId, topic, group);
         this.momentStatsItemSetFallSize.getAndCreateStatsItem(statsKey).getValue().set(fallBehind);
     }
