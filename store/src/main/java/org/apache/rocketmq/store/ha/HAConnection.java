@@ -165,6 +165,7 @@ public class HAConnection {
                         readSizeZeroTimes = 0;
                         this.lastReadTimestamp = HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now();
                         if ((this.byteBufferRead.position() - this.processPosition) >= 8) {
+                            // 如果读取的字节大于0并且本次读取到的内容大于等于 8，表明收到了从服务器一条拉取消息的请求
                             int pos = this.byteBufferRead.position() - (this.byteBufferRead.position() % 8);
                             long readOffset = this.byteBufferRead.getLong(pos - 8);
                             this.processPosition = pos;
@@ -181,6 +182,7 @@ public class HAConnection {
                                 return false;
                             }
 
+                            // 服务端会通知由于同步等待主从复制结果而阻塞的消 息发送者线程
                             HAConnection.this.haService.notifyTransferSome(HAConnection.this.slaveAckOffset);
                         }
                     } else if (readSize == 0) {
@@ -227,12 +229,15 @@ public class HAConnection {
                 try {
                     this.selector.select(1000);
 
+                    // 如果slaveRequestOffset等于-1，说明主服务器还未收 到从服务器的拉取请求
                     if (-1 == HAConnection.this.slaveRequestOffset) {
                         Thread.sleep(10);
                         continue;
                     }
 
+                    // 如果nextTransferFromWhere为-1，表示初次进行数据传输，计算待传输的物理偏移量
                     if (-1 == this.nextTransferFromWhere) {
+                        // 如果slaveRequestOffset为0，则从当前CommitLog文件最大偏移量开始传输
                         if (0 == HAConnection.this.slaveRequestOffset) {
                             long masterOffset = HAConnection.this.haService.getDefaultMessageStore().getCommitLog().getMaxOffset();
                             masterOffset =
@@ -246,6 +251,7 @@ public class HAConnection {
 
                             this.nextTransferFromWhere = masterOffset;
                         } else {
+                            // 根据从服务器的拉取请求偏移量开始传输
                             this.nextTransferFromWhere = HAConnection.this.slaveRequestOffset;
                         }
 
@@ -253,6 +259,7 @@ public class HAConnection {
                             + "], and slave request " + HAConnection.this.slaveRequestOffset);
                     }
 
+                    // 判断上次写事件是否已将信息全部写入客户端
                     if (this.lastWriteOver) {
 
                         long interval =
@@ -273,14 +280,20 @@ public class HAConnection {
                                 continue;
                         }
                     } else {
+                        // 如果上次数据未写完，则先传输上一次的数据，如果消息还是 未全部传输，则结束此次事件处理
                         this.lastWriteOver = this.transferData();
                         if (!this.lastWriteOver)
                             continue;
                     }
 
+                    // 根据消息从服务器请求的待拉取消息偏移量，查找该偏移量之 后所有的可读消息
                     SelectMappedBufferResult selectResult =
                         HAConnection.this.haService.getDefaultMessageStore().getCommitLogData(this.nextTransferFromWhere);
                     if (selectResult != null) {
+                        /**
+                         * 如果匹配到消息，且查找到的消息总长度大于配置高可用传输一次同步任务的最大传输字节数，则通过设置ByteBuffer的limit来控制只传输
+                         * 指定长度的字节，这就意味着高可用客户端收到的消息会包含不完整的消息。高可用一批次传输消息最大字节通过haTransferBatchSize设置，默认值为32KB
+                         */
                         int size = selectResult.getSize();
                         if (size > HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize()) {
                             size = HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize();
@@ -301,7 +314,7 @@ public class HAConnection {
 
                         this.lastWriteOver = this.transferData();
                     } else {
-
+                        // 未查到匹配的消息，通知所有等待线程继续 等待100ms。
                         HAConnection.this.haService.getWaitNotifyObject().allWaitForRunning(100);
                     }
                 } catch (Exception e) {

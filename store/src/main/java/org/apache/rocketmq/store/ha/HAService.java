@@ -269,7 +269,7 @@ public class HAService {
     /**
      * GroupTransferService Service
      * 主从同步阻塞的实现
-     * 如果是主从同步模式，消息发送者将消息写入磁盘后，需要继续等待新数据被 传输到从服务器，从服务器数据的复制是在另外一个线程 HAConnection中拉取的，所以消息发送者在这里需要等待数据传输的 结果
+     * 如果是主从同步模式，消息发送者将消息写入磁盘后，需要继续等待新数据被传输到从服务器，从服务器数据的复制是在另外一个线程 HAConnection中拉取的，所以消息发送者在这里需要等待数据传输的结果
      */
     class GroupTransferService extends ServiceThread {
 
@@ -304,14 +304,16 @@ public class HAService {
         }
 
         private void doWaitTransfer() {
-            // 读取请求存在
+            // 读取请求不为空，存在
             if (!this.requestsRead.isEmpty()) {
                 // 遍历
                 for (CommitLog.GroupCommitRequest req : this.requestsRead) {
-                    // 从服务器中已成功复制的消息最大偏移量是否大于、等于消息生产 者发送消息后消息服务端返回下一条消息的起始偏移量
+                    // 从服务器中已成功复制的消息最大偏移量是否大于、等于消息生产者发送消息后消息服务端返回下一条消息的起始偏移量
                     boolean transferOK = HAService.this.push2SlaveMaxOffset.get() >= req.getNextOffset();
                     long deadLine = req.getDeadLine();
+                    // 若未同步且未到达消息同步死亡时间
                     while (!transferOK && deadLine - System.nanoTime() > 0) {
+                        // 超过5s或者主从复制完成，跳出循环
                         this.notifyTransferObject.waitForRunning(1000);
                         transferOK = HAService.this.push2SlaveMaxOffset.get() >= req.getNextOffset();
                     }
@@ -329,8 +331,9 @@ public class HAService {
 
             while (!this.isStopped()) {
                 try {
-                    // 等待超过5s或GroupTransferService通知主从复制完成
+                    // 等待10ms，然后进行读写列表的交换
                     this.waitForRunning(10);
+                    // 等待超过5s或GroupTransferService通知主从复制完成
                     this.doWaitTransfer();
                 } catch (Exception e) {
                     log.warn(this.getServiceName() + " service has exception. ", e);
@@ -600,7 +603,7 @@ public class HAService {
                 try {
                     if (this.connectMaster()) {
 
-                        // 发送心跳，间隔5秒
+                        // 发送心跳,发送从服务器当前偏移量进行消息拉取,间隔5秒
                         if (this.isTimeToReportOffset()) {
                             // 是否需要向主服务器反馈当前待拉取消息的偏移量
                             boolean result = this.reportSlaveMaxOffset(this.currentReportedOffset);

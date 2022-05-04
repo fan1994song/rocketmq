@@ -767,7 +767,7 @@ public class DefaultMessageStore implements MessageStore {
 
                         // commitLog最大偏移量-本次拉取最大物理偏移量 的差值（计算后续预计要拉取的消息偏移量）
                         long diff = maxOffsetPy - maxPhyOffsetPulling;
-                        // 总物理内存40%的数据量  表示当前需要拉取的消息已经超出了常驻 内存的大小，表示主服务器繁忙，此时才建议从从服务器拉取消息
+                        // 总物理内存40%的数据量  表示当前需要拉取的消息已经超出了常驻内存的大小，表示主服务器繁忙，此时才建议从从服务器拉取消息
                         long memory = (long) (StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE
                             * (this.messageStoreConfig.getAccessMessageInMemoryMaxRatio() / 100.0));
                         // diff>40%,去从服务器拉取
