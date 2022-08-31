@@ -305,6 +305,7 @@ public abstract class RebalanceImpl {
 
                     List<MessageQueue> allocateResult = null;
                     try {
+                        // 得到根据负载均衡分配过来的messageQueue结果
                         allocateResult = strategy.allocate(
                             this.consumerGroup,
                             this.mQClientFactory.getClientId(),
@@ -322,6 +323,7 @@ public abstract class RebalanceImpl {
                         allocateResultSet.addAll(allocateResult);
                     }
 
+                    // 缓存的拉取队列和新平衡的对比，之前存在现在没有的移除，之前不存在现在存在的增加(顺序消息要秦秋broker端得到队列锁)
                     boolean changed = this.updateProcessQueueTableInRebalance(topic, allocateResultSet, isOrder);
                     if (changed) {
                         log.info(
